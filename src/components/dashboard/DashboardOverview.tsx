@@ -52,7 +52,7 @@ export function DashboardOverview() {
 
   const [compareVariable, setCompareVariable] = useState<
     'none' | 'temperature' | 'humidity'
-  >('none');
+  >('none'); // not used yet, but fine to keep
 
   const filteredDailyData = useMemo(
     () =>
@@ -242,8 +242,76 @@ export function DashboardOverview() {
   // === JSX ===
   return (
     <div className="space-y-6">
-      {/* TODO: your four stats cards using `stats` + icons if you want */}
+      {/* ✅ Stats Cards using `stats` */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Rainfall
+            </CardTitle>
+            <Droplets className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">
+              {stats.total.toLocaleString()} mm
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {yearRange[0]} - {yearRange[1]}
+            </p>
+          </CardContent>
+        </Card>
 
+        <Card className="bg-gradient-to-br from-accent/10 to-accent/5 border-accent/20">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Average Daily
+            </CardTitle>
+            <CloudRain className="h-4 w-4 text-accent" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">
+              {stats.avg.toLocaleString()} mm
+            </div>
+            <p className="text-xs text-muted-foreground">Per day in range</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-rainfall-success/10 to-rainfall-success/5 border-rainfall-success/20">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Wettest Day
+            </CardTitle>
+            <TrendingUp className="h-4 w-4 text-rainfall-success" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">
+              {stats.max.toLocaleString()} mm
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Max daily rainfall in range
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-rainfall-warning/10 to-rainfall-warning/5 border-rainfall-warning/20">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Driest Day
+            </CardTitle>
+            <Thermometer className="h-4 w-4 text-rainfall-warning" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">
+              {stats.min.toLocaleString()} mm
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Min daily rainfall in range
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main chart card */}
       <Card>
         <CardHeader>
           <CardTitle>Daily Rainfall Trends</CardTitle>
