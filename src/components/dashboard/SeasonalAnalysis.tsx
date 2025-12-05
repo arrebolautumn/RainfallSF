@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
 
 type WeatherRow = {
   date: Date;
@@ -35,6 +36,7 @@ const MARGIN = { top: 20, right: 20, bottom: 40, left: 60 };
 
 export function SeasonalAnalysis() {
   const [monthlyData, setMonthlyData] = useState<MonthlyStats[]>([]);
+  const [loading, setLoading] = useState(true);
   const presSvgRef = useRef<SVGSVGElement | null>(null);
   const tempSvgRef = useRef<SVGSVGElement | null>(null);
 
@@ -62,66 +64,73 @@ export function SeasonalAnalysis() {
       if (!date || isNaN(tavg) || isNaN(pres)) return null;
 
       return { date, tavg, pres };
-    }).then((rows) => {
-      const clean = rows.filter((d): d is WeatherRow => d !== null);
+    })
+      .then((rows) => {
+        const clean = rows.filter((d): d is WeatherRow => d !== null);
 
-      if (!clean.length) {
-        console.warn('No valid rows from CSV for tavg/pres month calculation.');
-        setMonthlyData([]);
-        return;
-      }
-
-      // Group by month index (0–11) and roll up stats for tavg and pres.
-      const rollup = d3.rollup<
-        WeatherRow,
-        {
-          tavgMean: number;
-          tavgMin: number;
-          tavgMax: number;
-          tavgCount: number;
-          presMean: number;
-          presMin: number;
-          presMax: number;
-          presCount: number;
+        if (!clean.length) {
+          console.warn('No valid rows from CSV for tavg/pres month calculation.');
+          setMonthlyData([]);
+          setLoading(false);
+          return;
         }
-      >(
-        clean,
-        (values) => {
-          const tavgVals = values.map((v) => v.tavg);
-          const presVals = values.map((v) => v.pres);
 
-          return {
-            tavgMean: d3.mean(tavgVals) ?? NaN,
-            tavgMin: d3.min(tavgVals) ?? NaN,
-            tavgMax: d3.max(tavgVals) ?? NaN,
-            tavgCount: tavgVals.length,
-            presMean: d3.mean(presVals) ?? NaN,
-            presMin: d3.min(presVals) ?? NaN,
-            presMax: d3.max(presVals) ?? NaN,
-            presCount: presVals.length,
-          };
-        },
-        (d) => d.date.getMonth()
-      );
+        // Group by month index (0–11) and roll up stats for tavg and pres.
+        const rollup = d3.rollup<
+          WeatherRow,
+          {
+            tavgMean: number;
+            tavgMin: number;
+            tavgMax: number;
+            tavgCount: number;
+            presMean: number;
+            presMin: number;
+            presMax: number;
+            presCount: number;
+          }
+        >(
+          clean,
+          (values) => {
+            const tavgVals = values.map((v) => v.tavg);
+            const presVals = values.map((v) => v.pres);
 
-      const monthlyArray: MonthlyStats[] = Array.from(
-        rollup,
-        ([monthIndex, s]) => ({
-          monthIndex,
-          monthLabel: formatMonth(new Date(2000, monthIndex, 1)),
-          tavgMean: Number((s.tavgMean ?? NaN).toFixed(1)),
-          tavgMin: Number((s.tavgMin ?? NaN).toFixed(1)),
-          tavgMax: Number((s.tavgMax ?? NaN).toFixed(1)),
-          tavgCount: s.tavgCount,
-          presMean: Number((s.presMean ?? NaN).toFixed(1)),
-          presMin: Number((s.presMin ?? NaN).toFixed(1)),
-          presMax: Number((s.presMax ?? NaN).toFixed(1)),
-          presCount: s.presCount,
-        })
-      ).sort((a, b) => a.monthIndex - b.monthIndex);
+            return {
+              tavgMean: d3.mean(tavgVals) ?? NaN,
+              tavgMin: d3.min(tavgVals) ?? NaN,
+              tavgMax: d3.max(tavgVals) ?? NaN,
+              tavgCount: tavgVals.length,
+              presMean: d3.mean(presVals) ?? NaN,
+              presMin: d3.min(presVals) ?? NaN,
+              presMax: d3.max(presVals) ?? NaN,
+              presCount: presVals.length,
+            };
+          },
+          (d) => d.date.getMonth()
+        );
 
-      setMonthlyData(monthlyArray);
-    });
+        const monthlyArray: MonthlyStats[] = Array.from(
+          rollup,
+          ([monthIndex, s]) => ({
+            monthIndex,
+            monthLabel: formatMonth(new Date(2000, monthIndex, 1)),
+            tavgMean: Number((s.tavgMean ?? NaN).toFixed(1)),
+            tavgMin: Number((s.tavgMin ?? NaN).toFixed(1)),
+            tavgMax: Number((s.tavgMax ?? NaN).toFixed(1)),
+            tavgCount: s.tavgCount,
+            presMean: Number((s.presMean ?? NaN).toFixed(1)),
+            presMin: Number((s.presMin ?? NaN).toFixed(1)),
+            presMax: Number((s.presMax ?? NaN).toFixed(1)),
+            presCount: s.presCount,
+          })
+        ).sort((a, b) => a.monthIndex - b.monthIndex);
+
+        setMonthlyData(monthlyArray);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('Error loading CSV', err);
+        setLoading(false);
+      });
   }, []);
 
   // 2. Overall warmest/coolest months by tavg
@@ -238,7 +247,6 @@ export function SeasonalAnalysis() {
       tooltip.append('text').attr('fill', 'white').attr('font-size', 10),
     ];
 
-    
     const showHover = (d: MonthlyStats) => {
       const barX = x(d.monthLabel)!;
       const cx = barX + x.bandwidth() / 2;
@@ -246,9 +254,8 @@ export function SeasonalAnalysis() {
       hoverGroup.style('display', null);
       hoverLine.attr('x1', cx).attr('x2', cx);
 
-      // FIX: keep tooltip at a constant height for all months
       const tooltipX = cx + 20;
-      const tooltipY = MARGIN.top + 30; // pick any height you like
+      const tooltipY = MARGIN.top + 30;
 
       tooltipTextMonth
         .attr('x', tooltipX)
@@ -288,7 +295,6 @@ export function SeasonalAnalysis() {
         .attr('width', maxX - minX + paddingX * 2)
         .attr('height', maxY - minY + paddingY * 2);
     };
-
 
     const hideHover = () => {
       hoverGroup.style('display', 'none');
@@ -545,9 +551,36 @@ export function SeasonalAnalysis() {
       .on('mouseleave', hideHover);
   }, [monthlyData]);
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {/* Warmest / Coolest month by TAVG */}
+      {/* Average Monthly Pressure (pres) */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Average Monthly Pressure</CardTitle>
+          <CardDescription>
+            Mean daily average sea-level pressure per month, aggregated over all years in the dataset.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="w-full h-[360px]">
+            <svg
+              ref={presSvgRef}
+              viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
+              className="w-full h-full"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+            {/* Warmest / Coolest month by TAVG */}
       {overallSummary && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
@@ -587,25 +620,6 @@ export function SeasonalAnalysis() {
           </Card>
         </div>
       )}
-
-      {/* Average Monthly Pressure (pres) */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Average Monthly Pressure</CardTitle>
-          <CardDescription>
-            Mean daily average sea-level pressure per month, aggregated over all years in the dataset.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="w-full h-[360px]">
-            <svg
-              ref={presSvgRef}
-              viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
-              className="w-full h-full"
-            />
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Monthly Temperature Trends (3-line chart) */}
       <Card>

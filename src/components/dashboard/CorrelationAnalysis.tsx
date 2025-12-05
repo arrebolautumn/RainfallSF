@@ -1,11 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ZAxis } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { getCorrelationData } from '@/data/mockRainfallData';
-
-const correlationData = getCorrelationData();
+import { Loader2 } from 'lucide-react';
+import { getCorrelationData } from '@/data/RainfallData';
+import { CorrelationPoint } from '@/types/rainfall';
 
 type Variable = 'rainfall' | 'temperature' | 'humidity';
 
@@ -18,8 +18,27 @@ const variableLabels: Record<Variable, string> = {
 export function CorrelationAnalysis() {
   const [xVariable, setXVariable] = useState<Variable>('temperature');
   const [yVariable, setYVariable] = useState<Variable>('rainfall');
+  const [correlationData, setCorrelationData] = useState<CorrelationPoint[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const data = await getCorrelationData();
+        setCorrelationData(data);
+      } catch (error) {
+        console.error('Error loading correlation data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   const correlation = useMemo(() => {
+    if (correlationData.length === 0) return 0;
+    
     const n = correlationData.length;
     const xValues = correlationData.map(d => d[xVariable]);
     const yValues = correlationData.map(d => d[yVariable]);
@@ -41,7 +60,7 @@ export function CorrelationAnalysis() {
     
     const r = numerator / Math.sqrt(xDenom * yDenom);
     return Math.round(r * 100) / 100;
-  }, [xVariable, yVariable]);
+  }, [xVariable, yVariable, correlationData]);
 
   const getCorrelationStrength = (r: number) => {
     const absR = Math.abs(r);
@@ -60,10 +79,11 @@ export function CorrelationAnalysis() {
       year: d.year,
       month: d.month,
     }));
-  }, [xVariable, yVariable]);
+  }, [xVariable, yVariable, correlationData]);
 
-  // Calculate all correlations for the matrix
   const correlationMatrix = useMemo(() => {
+    if (correlationData.length === 0) return [];
+    
     const variables: Variable[] = ['rainfall', 'temperature', 'humidity'];
     const matrix: { var1: Variable; var2: Variable; r: number }[] = [];
     
@@ -97,7 +117,15 @@ export function CorrelationAnalysis() {
     }
     
     return matrix;
-  }, []);
+  }, [correlationData]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

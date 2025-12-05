@@ -18,7 +18,7 @@ type DailyRecord = {
 
 export function DashboardOverview() {
   const [dailyData, setDailyData] = useState<DailyRecord[]>([]);
-  const [selectedPoint, setSelectedPoint] = useState<DailyRecord | null>(null); // NEW
+  const [selectedPoint, setSelectedPoint] = useState<DailyRecord | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
 
   // Load CSV
@@ -138,10 +138,9 @@ export function DashboardOverview() {
       .attr('stroke-width', 2)
       .attr('d', line);
 
-    // ===== HOVER / CLICK INTERACTION (NEW) =====
+    // ===== HOVER / CLICK INTERACTION =====
     const bisectDate = d3.bisector<DailyRecord, Date>((d) => d.date).left;
 
-    // group that moves with the mouse
     const focus = g.append('g').style('display', 'none');
 
     // vertical line
@@ -238,18 +237,13 @@ export function DashboardOverview() {
 
         setSelectedPoint(d); // store selection in React state
       });
-
-    // ===========================================
-
-  }, [filteredDailyData, setSelectedPoint]);
+  }, [filteredDailyData]);
 
   // === JSX ===
   return (
     <div className="space-y-6">
-      {/* Stats */}
-      {/* ... your four cards unchanged ... */}
+      {/* TODO: your four stats cards using `stats` + icons if you want */}
 
-      {/* Controls + Chart */}
       <Card>
         <CardHeader>
           <CardTitle>Daily Rainfall Trends</CardTitle>
@@ -278,7 +272,7 @@ export function DashboardOverview() {
             <svg ref={svgRef} className="w-full h-full" />
           </div>
 
-          {/* Info shown after click (NEW) */}
+          {/* Info shown after click */}
           {selectedPoint && (
             <div className="text-sm text-muted-foreground">
               <span className="font-medium">Selected day:</span>{' '}
