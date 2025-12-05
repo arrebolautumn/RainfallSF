@@ -1,10 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getMonthlyAverages, getSeasonalHeatmapData } from '@/data/mockRainfallData';
-
-const monthlyData = getMonthlyAverages();
-const seasonalHeatmap = getSeasonalHeatmapData();
+import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { getMonthlyAverages, getSeasonalHeatmapData } from '@/data/RainfallData';
 
 const seasonColors: { [key: string]: string } = {
   Winter: 'hsl(var(--primary))',
@@ -28,20 +27,78 @@ const monthColors = [
   'hsl(199, 89%, 44%)', // Dec
 ];
 
+interface MonthlyData {
+  month: string;
+  avgRainfall: number;
+  minRainfall: number;
+  maxRainfall: number;
+}
+
+interface SeasonalData {
+  year: number;
+  season: string;
+  rainfall: number;
+}
+
 export function SeasonalAnalysis() {
+  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
+  const [seasonalHeatmap, setSeasonalHeatmap] = useState<SeasonalData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'month' | 'season'>('month');
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [monthly, seasonal] = await Promise.all([
+          getMonthlyAverages(),
+          getSeasonalHeatmapData(),
+        ]);
+        setMonthlyData(monthly);
+        setSeasonalHeatmap(seasonal);
+      } catch (error) {
+        console.error('Error loading seasonal data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
   const seasonalSummary = useMemo(() => {
+    if (seasonalHeatmap.length === 0) return [];
+    
     const seasons = ['Winter', 'Spring', 'Summer', 'Autumn'];
     return seasons.map(season => {
       const seasonData = seasonalHeatmap.filter(d => d.season === season);
+      if (seasonData.length === 0) {
+        return { season, avg: 0, max: 0, min: 0 };
+      }
       const avg = seasonData.reduce((sum, d) => sum + d.rainfall, 0) / seasonData.length;
       const max = Math.max(...seasonData.map(d => d.rainfall));
       const min = Math.min(...seasonData.map(d => d.rainfall));
       return { season, avg: Math.round(avg), max: Math.round(max), min: Math.round(min) };
     });
-  }, []);
+  }, [seasonalHeatmap]);
 
-  // Create heatmap data for visualization
+  // Aggregate seasonal data for bar chart
+  const seasonalBarData = useMemo(() => {
+    if (seasonalHeatmap.length === 0) return [];
+    
+    const seasons = ['Winter', 'Spring', 'Summer', 'Autumn'];
+    return seasons.map(season => {
+      const seasonData = seasonalHeatmap.filter(d => d.season === season);
+      if (seasonData.length === 0) {
+        return { season, avgRainfall: 0 };
+      }
+      const avg = seasonData.reduce((sum, d) => sum + d.rainfall, 0) / seasonData.length;
+      return { season, avgRainfall: Math.round(avg * 10) / 10 };
+    });
+  }, [seasonalHeatmap]);
+
   const heatmapGrid = useMemo(() => {
+    if (seasonalHeatmap.length === 0) return [];
+    
     const years = Array.from(new Set(seasonalHeatmap.map(d => d.year))).sort();
     const seasons = ['Winter', 'Spring', 'Summer', 'Autumn'];
     
@@ -53,15 +110,25 @@ export function SeasonalAnalysis() {
       });
       return row;
     });
-  }, []);
+  }, [seasonalHeatmap]);
 
   const getHeatmapColor = (value: number) => {
+    if (seasonalHeatmap.length === 0) return 'hsl(199, 89%, 90%)';
+    
     const maxValue = Math.max(...seasonalHeatmap.map(d => d.rainfall));
     const minValue = Math.min(...seasonalHeatmap.map(d => d.rainfall));
     const normalized = (value - minValue) / (maxValue - minValue);
     const lightness = 90 - normalized * 50;
     return `hsl(199, 89%, ${lightness}%)`;
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -86,32 +153,69 @@ export function SeasonalAnalysis() {
         ))}
       </div>
 
-      {/* Monthly Distribution */}
+      {/* Monthly/Seasonal Distribution with Toggle */}
       <Card>
         <CardHeader>
-          <CardTitle>Monthly Rainfall Distribution</CardTitle>
-          <CardDescription>Average rainfall by month with min/max ranges</CardDescription>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <CardTitle>
+                {viewMode === 'month' ? 'Monthly' : 'Seasonal'} Rainfall Distribution
+              </CardTitle>
+              <CardDescription>
+                {viewMode === 'month' 
+                  ? 'Average rainfall by month across all years'
+                  : 'Average rainfall by season across all years'}
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant={viewMode === 'month' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('month')}
+              >
+                Month
+              </Button>
+              <Button
+                variant={viewMode === 'season' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('season')}
+              >
+                Season
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <BarChart 
+                data={viewMode === 'month' ? monthlyData : seasonalBarData} 
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="month" className="text-xs" />
-                <YAxis className="text-xs" />
+                <XAxis 
+                  dataKey={viewMode === 'month' ? 'month' : 'season'} 
+                  className="text-xs" 
+                />
+                <YAxis className="text-xs" label={{ value: 'Rainfall (mm)', angle: -90, position: 'insideLeft' }} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: 'hsl(var(--card))',
                     border: '1px solid hsl(var(--border))',
                     borderRadius: 'var(--radius)',
                   }}
-                  formatter={(value: number, name: string) => [`${value} mm`, name]}
+                  formatter={(value: number) => [`${value} mm`, 'Average Rainfall']}
                 />
                 <Legend />
                 <Bar dataKey="avgRainfall" name="Average Rainfall" radius={[4, 4, 0, 0]}>
-                  {monthlyData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={monthColors[index]} />
-                  ))}
+                  {viewMode === 'month' 
+                    ? monthlyData.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={monthColors[index]} />
+                      ))
+                    : seasonalBarData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={seasonColors[entry.season]} />
+                      ))
+                  }
                 </Bar>
               </BarChart>
             </ResponsiveContainer>

@@ -1,12 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, TrendingUp, TrendingDown, Activity } from 'lucide-react';
-import { getExtremeEvents, getAnnualRainfall } from '@/data/mockRainfallData';
-
-const extremeEvents = getExtremeEvents();
-const annualData = getAnnualRainfall();
+import { AlertTriangle, TrendingUp, TrendingDown, Activity, Loader2 } from 'lucide-react';
+import { getExtremeEvents, getAnnualRainfall } from '@/data/RainfallData';
+import { ExtremeEvent, AnnualRainfall } from '@/types/rainfall';
 
 const categoryColors: Record<string, string> = {
   extreme_high: 'hsl(var(--rainfall-danger))',
@@ -25,7 +23,40 @@ const categoryLabels: Record<string, string> = {
 };
 
 export function ExtremeEvents() {
+  const [extremeEvents, setExtremeEvents] = useState<ExtremeEvent[]>([]);
+  const [annualData, setAnnualData] = useState<AnnualRainfall[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [events, annual] = await Promise.all([
+          getExtremeEvents(),
+          getAnnualRainfall(),
+        ]);
+        setExtremeEvents(events);
+        setAnnualData(annual);
+      } catch (error) {
+        console.error('Error loading extreme events data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
   const stats = useMemo(() => {
+    if (annualData.length === 0 || extremeEvents.length === 0) {
+      return {
+        avgRainfall: 0,
+        extremeHighCount: 0,
+        extremeLowCount: 0,
+        maxEvent: { year: 0, rainfall: 0 },
+        minEvent: { year: 0, rainfall: 0 },
+      };
+    }
+
     const avgRainfall = annualData.reduce((sum, d) => sum + d.totalRainfall, 0) / annualData.length;
     const extremeHighCount = extremeEvents.filter(e => e.category === 'extreme_high').length;
     const extremeLowCount = extremeEvents.filter(e => e.category === 'extreme_low').length;
@@ -33,7 +64,7 @@ export function ExtremeEvents() {
     const minEvent = extremeEvents.reduce((min, e) => e.rainfall < min.rainfall ? e : min);
     
     return { avgRainfall: Math.round(avgRainfall), extremeHighCount, extremeLowCount, maxEvent, minEvent };
-  }, []);
+  }, [annualData, extremeEvents]);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {
@@ -45,7 +76,15 @@ export function ExtremeEvents() {
     };
     extremeEvents.forEach(e => counts[e.category]++);
     return counts;
-  }, []);
+  }, [extremeEvents]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

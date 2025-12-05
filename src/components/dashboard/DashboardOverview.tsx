@@ -1,28 +1,71 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { getAnnualRainfall } from '@/data/mockRainfallData';
-import { TrendingUp, Droplets, Thermometer, CloudRain } from 'lucide-react';
-
-const annualData = getAnnualRainfall();
+import { getAnnualRainfall } from '@/data/RainfallData';
+import { TrendingUp, Droplets, Thermometer, CloudRain, Loader2 } from 'lucide-react';
+import { AnnualRainfall } from '@/types/rainfall';
 
 export function DashboardOverview() {
   const [yearRange, setYearRange] = useState([1993, 2023]);
   const [compareVariable, setCompareVariable] = useState<'none' | 'temperature' | 'humidity'>('none');
+  const [annualData, setAnnualData] = useState<AnnualRainfall[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const data = await getAnnualRainfall();
+        setAnnualData(data);
+        
+        // Update year range based on actual data
+        if (data.length > 0) {
+          const minYear = Math.min(...data.map(d => d.year));
+          const maxYear = Math.max(...data.map(d => d.year));
+          setYearRange([minYear, maxYear]);
+        }
+      } catch (error) {
+        console.error('Error loading annual rainfall data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   const filteredData = useMemo(() => {
     return annualData.filter(d => d.year >= yearRange[0] && d.year <= yearRange[1]);
-  }, [yearRange]);
+  }, [yearRange, annualData]);
 
   const stats = useMemo(() => {
+    if (filteredData.length === 0) {
+      return { total: 0, avg: 0, max: 0, min: 0 };
+    }
+    
     const total = filteredData.reduce((sum, d) => sum + d.totalRainfall, 0);
     const avg = total / filteredData.length;
     const max = Math.max(...filteredData.map(d => d.totalRainfall));
     const min = Math.min(...filteredData.map(d => d.totalRainfall));
     return { total: Math.round(total), avg: Math.round(avg), max: Math.round(max), min: Math.round(min) };
   }, [filteredData]);
+
+  const yearBounds = useMemo(() => {
+    if (annualData.length === 0) return { min: 1993, max: 2023 };
+    return {
+      min: Math.min(...annualData.map(d => d.year)),
+      max: Math.max(...annualData.map(d => d.year))
+    };
+  }, [annualData]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -77,7 +120,7 @@ export function DashboardOverview() {
       <Card>
         <CardHeader>
           <CardTitle>Annual Rainfall Trends</CardTitle>
-          <CardDescription>Explore rainfall patterns from 1993 to 2023</CardDescription>
+          <CardDescription>Explore rainfall patterns from {yearBounds.min} to {yearBounds.max}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex flex-col md:flex-row gap-6">
@@ -86,8 +129,8 @@ export function DashboardOverview() {
               <Slider
                 value={yearRange}
                 onValueChange={setYearRange}
-                min={1993}
-                max={2023}
+                min={yearBounds.min}
+                max={yearBounds.max}
                 step={1}
                 className="w-full"
               />
