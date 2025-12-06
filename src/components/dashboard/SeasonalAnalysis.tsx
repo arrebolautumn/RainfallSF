@@ -580,7 +580,28 @@ export function SeasonalAnalysis() {
         </CardContent>
       </Card>
 
-            {/* Warmest / Coolest month by TAVG */}
+      {/* Monthly Temperature Trends (3-line chart) */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Monthly Temperature Trends</CardTitle>
+          <CardDescription>
+            Minimum, mean, and maximum daily average temperature per month,
+            aggregated over all years in the dataset. Hover over a month to see details.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="w-full h-[360px]">
+            <svg
+              ref={tempSvgRef}
+              viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
+              className="w-full h-full"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      
+      {/* Warmest / Coolest month by TAVG */}
       {overallSummary && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
@@ -621,25 +642,6 @@ export function SeasonalAnalysis() {
         </div>
       )}
 
-      {/* Monthly Temperature Trends (3-line chart) */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Monthly Temperature Trends</CardTitle>
-          <CardDescription>
-            Minimum, mean, and maximum daily average temperature per month,
-            aggregated over all years in the dataset. Hover over a month to see details.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="w-full h-[360px]">
-            <svg
-              ref={tempSvgRef}
-              viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
-              className="w-full h-full"
-            />
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
