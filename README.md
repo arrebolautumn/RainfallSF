@@ -1,17 +1,15 @@
 # San Francisco Historical Weather Visualization System
 
-This project is an interactive, web-based visualization system designed to explore historical weather patterns in San Francisco. The system provides multi-view analytics including rainfall trends, temperature seasonality, extreme weather events, dataset exploration, and a geographical climate map. It was implemented for the CSC 805 Data Visualization course at San Francisco State University.
-
+This project is an interactive, web-based visualization system designed to analyze long-term rainfall patterns in San Francisco. While the system includes secondary views for temperature, pressure, and climatic context, the primary emphasis is on rainfall trends, deviations, extreme precipitation events, and spatial rainfall distribution. It was implemented for the CSC 805 Data Visualization course at San Francisco State University.
 ## Overview
 
-The application enables users to analyze more than 30 years of San Francisco climate data through intuitive charts, dashboards, and an interactive map. It highlights trends in rainfall, temperature, atmospheric pressure, and extreme events such as unusually wet or dry years.
+The application enables users to explore more than 30 years of historical rainfall in San Francisco through interactive dashboards, event classification, and a geographical climate map. It highlights year-to-year and month-to-month rainfall variation, extreme wet or dry years, and deviations from long-term historical baselines.
 
-The system emphasizes clarity, interactivity, and data-driven storytelling, making complex climate patterns accessible for exploration and comparison.
+The system is designed for clarity and exploration, allowing users to investigate how rainfall patterns evolve over time and across different parts of the city.
 
 ## Features
 
 ### 1. Overview Dashboard
-
 
 * Total rainfall and average monthly rainfall across the full dataset.
 * Wettest and driest months in the selected year range.
