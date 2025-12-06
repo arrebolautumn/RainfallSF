@@ -72,7 +72,6 @@ Original source:
 https://www.kaggle.com/datasets/noahx1/san-francisco-weather-data
 
 Attributes include:
-```
 * date
 * tavg, tmin, tmax
 * prcp (precipitation)
@@ -80,7 +79,7 @@ Attributes include:
 * wspd, wdir, wpgt
 * pres
 * tsun
-```
+
 Several data-cleaning steps were applied:
 * Correction of invalid temperature values outside the range [tmin, tmax]
 * Removal of sentinel values such as -17.8
