@@ -91,9 +91,17 @@ export function SeasonalAnalysis() {
         >(
           clean,
           (values) => {
-            const tavgVals = values.map((v) => v.tavg);
+            const tavgVals = values
+              .map((v) => v.tavg)
+              .filter((v) => 
+                v !== -17.8 &&        // sentinel
+                v !== 0 &&            // drop bogus zeros (common)
+                v > -10 &&            // SF never goes below -10°C
+                v < 45   
+              );
+            
             const presVals = values.map((v) => v.pres);
-
+            
             return {
               tavgMean: d3.mean(tavgVals) ?? NaN,
               tavgMin: d3.min(tavgVals) ?? NaN,

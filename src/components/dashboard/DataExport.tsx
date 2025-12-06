@@ -113,6 +113,18 @@ export function DataExport() {
               Export the historical weather data used by the current dashboard as
               a CSV file for further analysis in Excel/Python/R.
             </CardDescription>
+
+              <p className="text-xs text-muted-foreground">
+                Original dataset from{' '}
+                <a
+                href="https://www.kaggle.com/datasets/noahx1/san-francisco-weather-data"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-blue-600"
+              >
+                Kaggle: San Francisco Weather Data
+                </a>
+              </p>
           </div>
           <FileSpreadsheet className="h-8 w-8 text-primary" />
         </CardHeader>
