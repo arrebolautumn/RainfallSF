@@ -12,11 +12,11 @@ The system emphasizes clarity, interactivity, and data-driven storytelling, maki
 
 ### 1. Overview Dashboard
 
-Total rainfall and average monthly rainfall across the full dataset.
 
-Wettest and driest months in the selected year range.
+* Total rainfall and average monthly rainfall across the full dataset.
 
-Interactive month-by-month rainfall trend chart with adjustable time range.
+* Wettest and driest months in the selected year range.
+- Interactive month-by-month rainfall trend chart with adjustable time range.
 
 ### 2. Seasonal Analysis
 
@@ -132,11 +132,11 @@ npm run dev
 
 Open the local development URL provided by Vite.
 
-##Export Functionality##
+### Export Functionality
 
 The “Export” view allows users to download the full cleaned dataset used within the application. This ensures full transparency and reproducibility of all visualizations.
 
-##Acknowledgments##
+### Acknowledgments
 
 This project was completed as part of:
 
